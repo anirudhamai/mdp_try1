@@ -47,7 +47,7 @@ public class user_login extends AppCompatActivity {
                     Boolean checkuserpass = check(user,passw);
                     if(checkuserpass==true){
                         Toast.makeText(user_login.this, "Sign in successfull", Toast.LENGTH_SHORT).show();
-                        Intent intent  = new Intent(getApplicationContext(), driver_login.class);
+                        Intent intent  = new Intent(getApplicationContext(), user_1.class);
                         intent.putExtra("uname",user);
                         startActivity(intent);
                     }else{
