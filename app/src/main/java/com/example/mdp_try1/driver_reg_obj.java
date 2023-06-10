@@ -2,7 +2,7 @@ package com.example.mdp_try1;
 
 public class driver_reg_obj {
     public String uname,name,email,ph,pass;
-    public boolean avail;
+//    public boolean avail;
     public driver_reg_obj() {
     }
 
@@ -12,7 +12,6 @@ public class driver_reg_obj {
         this.email = email;
         this.pass=pass;
         this.ph=phone;
-        this.avail=false;
     }
     public String getPass(){
         return this.pass;
@@ -24,7 +23,7 @@ public class driver_reg_obj {
     public String getname(){
         return this.name;
     }
-    public boolean checkavail(){
-        return this.avail;
-    }
+//    public boolean checkavail(){
+//        return this.avail;
+//    }
 }

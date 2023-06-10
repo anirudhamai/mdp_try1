@@ -2,42 +2,41 @@ package com.example.mdp_try1;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.graphics.Color.GREEN;
+import static android.graphics.Color.RED;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.location.LocationListener;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-
-public class user_1 extends AppCompatActivity {
-
-    Button getloc, book;
-    int locfetched = 0;
+public class driver1 extends AppCompatActivity {
+    int locfetched=0;
+    String user;
     DatabaseReference wdatabase;
+    private Handler handler;
+    private Runnable toggleChecker;
     private ArrayList permissionsToRequest;
     private ArrayList permissionsRejected = new ArrayList();
     private ArrayList permissions = new ArrayList();
@@ -46,14 +45,12 @@ public class user_1 extends AppCompatActivity {
     LocationTrack locationTrack;
     final String[] loc = new String[2];
 
-
-
+    ToggleButton avail;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user1);
-
-        String user = getIntent().getStringExtra("uname").toString();
+        setContentView(R.layout.activity_driver1);
+        user = getIntent().getStringExtra("uname").toString();
 
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
@@ -65,78 +62,113 @@ public class user_1 extends AppCompatActivity {
                 requestPermissions((String[]) permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
         }
 
-        getloc=(Button)findViewById(R.id.button);
-        getloc.setOnClickListener(new View.OnClickListener() {
+        avail=(ToggleButton) findViewById(R.id.toggleButton);
+        avail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                locationTrack = new LocationTrack(user_1.this);
-                if (locationTrack.canGetLocation()) {
-                    double longitude = locationTrack.getLongitude();
-                    double latitude = locationTrack.getLatitude();
-                    try {
-                        if(longitude==0.0)
-                        {
-                            wait(10);
-                            locfetched=0;
-                        }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if(longitude!=0.0)
-                    {
-                        locfetched=1;
-                    }
-                    loc[0] = String.valueOf(longitude);
-                    loc[1] = String.valueOf(latitude);
-                    Log.e("lon",loc[0]);
-                    Log.e("lat",loc[1]);
+                if(avail.isChecked())
+                {
+                    avail.setBackgroundColor(GREEN);
+                    avail.setRotationX(-13);
                 }
-                else {
-                    locfetched=0;
-                    locationTrack.showSettingsAlert();
+                else{
+                    avail.setBackgroundColor(RED);
+                    avail.setRotationX(13);
                 }
             }
         });
+        fun();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        handler.postDelayed(toggleChecker, 30000); // Start the initial check after 10 seconds
+    }
 
-        book=(Button)findViewById(R.id.button2);
-        book.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                func(user);
-            }
-        });
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(toggleChecker); // Stop the continuous checking
     }
 
 
-    public void func(String user)
+    public void fun()
     {
-        if(locfetched==1)
-        {
-            Log.e("Latitude:" , loc[1]);
-            Log.e("Longitude:" , loc[0]);
-            wdatabase= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
-            wdatabase.child("try1").child("user_reqs").child(user).child("lon").setValue(loc[0]);
-            wdatabase.child("try1").child("user_reqs").child(user).child("lat").setValue(loc[1]);
-            wdatabase.child("try1").child("user_reqs").child(user).child("user").setValue(user);
-            ProgressDialog pd = new ProgressDialog(user_1.this);
-            pd.setTitle("Loading");
-            pd.setMessage("Finding a driver. Please wait!!");
-            pd.setCancelable(true);
-            pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            pd.show();
-            if(wdatabase.child("try1").child("app_users").child(user).get()!=null)
-            {
-                pd.dismiss();
+        Log.e("inside","fun");
+
+        handler = new Handler();
+        toggleChecker = new Runnable() {
+            @Override
+            public void run() {
+                Log.e("inside","run");
+                checkToggleButtonState(); // Method to check the ToggleButton state
+                handler.postDelayed(this, 30000); // Schedule the next check after 10 seconds (10,000 milliseconds)
+            }
+        };
+    }
+
+    public void checkToggleButtonState()
+    {
+        boolean isChecked = avail.isChecked();
+
+        if (isChecked) {
+            Log.e("state","available");
+            locationTrack = new LocationTrack(driver1.this);
+            if (locationTrack.canGetLocation()) {
+                double longitude = locationTrack.getLongitude();
+                double latitude = locationTrack.getLatitude();
+                try {
+                    if(longitude==0.0)
+                    {
+                        Thread.sleep(1000);
+                        locfetched=0;
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if(longitude!=0.0)
+                {
+                    locfetched=1;
+                }
+                loc[0] = String.valueOf(longitude);
+                loc[1] = String.valueOf(latitude);
+                Log.e("lon",loc[0]);
+                Log.e("lat",loc[1]);
+                readydriver r1=new readydriver(loc[1],loc[0],user);
+                wdatabase= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
+                wdatabase.child("try1").child("ready_drivers").child(user).setValue(r1);
+//                wdatabase.child("try1").child("ready_drivers").child(user).child("lat").setValue(loc[1]);
+//                wdatabase.child("try1").child("ready_drivers").child(user).child("user").setValue(user);
+            }
+            else {
+                locfetched=0;
+//                locationTrack.showSettingsAlert();
+
+            }
+        } else {
+            Log.e("state", "busy");
+            wdatabase = FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
+            if (locfetched == 0) {
+                Toast.makeText(this, "Updated", Toast.LENGTH_SHORT);
+            } else {
+                //remove driver data
+                wdatabase.child("try1").child("ready_drivers").child(user).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Log.e("status", "deleted");
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e("status", "deletion failed");
+                    }
+                });
+                Toast.makeText(this, "Table Updated", Toast.LENGTH_SHORT);
             }
         }
-        else {
-            new AlertDialog.Builder(user_1.this)
-                    .setMessage("Please fetch your device location")
-                    .setPositiveButton("OK", null)
-                    .create()
-                    .show();
-        }
     }
+
+
 
 
     private ArrayList findUnAskedPermissions(ArrayList wanted) {
@@ -204,7 +236,7 @@ public class user_1 extends AppCompatActivity {
     }
 
     private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
-        new AlertDialog.Builder(user_1.this)
+        new AlertDialog.Builder(this)
                 .setMessage(message)
                 .setPositiveButton("OK", okListener)
                 .setNegativeButton("Cancel", null)

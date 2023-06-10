@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".driver1">
+
+    <ToggleButton
+        android:id="@+id/toggleButton"
+        android:layout_width="202dp"
+        android:layout_height="86dp"
+        android:layout_marginStart="116dp"
+        android:layout_marginTop="244dp"
+        android:gravity="center"
+        android:background="#FF0000"
+        android:fadingEdge="vertical"
+        android:fadingEdgeLength="10sp"
+        android:rotationX="13"
+        android:text="ToggleButton"
+        android:textOff="Busy"
+        android:textOn="Available"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

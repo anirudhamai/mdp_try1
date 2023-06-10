@@ -52,7 +52,7 @@ public class driver_login extends AppCompatActivity {
                     Boolean checkuserpass = check(user,passw);
                     if(checkuserpass==true){
                         Toast.makeText(driver_login.this, "Sign in successfull", Toast.LENGTH_SHORT).show();
-                        Intent intent  = new Intent(getApplicationContext(), MainActivity.class);
+                        Intent intent  = new Intent(getApplicationContext(), driver1.class);
                         intent.putExtra("uname",user);
                         startActivity(intent);
                     }else{
@@ -86,7 +86,7 @@ public class driver_login extends AppCompatActivity {
     }
 
     public void gosignup(View view) {
-        Intent obj = new Intent(getApplicationContext(),MainActivity.class);
+        Intent obj = new Intent(getApplicationContext(),driver_signup.class);
         startActivity(obj);
     }
 }
