@@ -13,6 +13,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.LocationListener;
 import android.os.Build;
@@ -24,20 +25,28 @@ import android.widget.Button;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.widget.Toast;
 
 public class user_1 extends AppCompatActivity {
 
     Button getloc, book;
+    String user;
     int locfetched = 0;
-    DatabaseReference wdatabase;
+    double longitude,latitude;
+    user_req_obj res,check;
+    DatabaseReference wdatabase,wdatabase1,wb;
     private ArrayList permissionsToRequest;
     private ArrayList permissionsRejected = new ArrayList();
     private ArrayList permissions = new ArrayList();
@@ -45,6 +54,8 @@ public class user_1 extends AppCompatActivity {
     private final static int ALL_PERMISSIONS_RESULT = 101;
     LocationTrack locationTrack;
     final String[] loc = new String[2];
+    private ProgressDialog progressDialog;
+    private ValueEventListener valueEventListener;
 
 
 
@@ -53,7 +64,7 @@ public class user_1 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user1);
 
-        String user = getIntent().getStringExtra("uname").toString();
+        user = getIntent().getStringExtra("uname").toString();
 
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
@@ -69,32 +80,7 @@ public class user_1 extends AppCompatActivity {
         getloc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                locationTrack = new LocationTrack(user_1.this);
-                if (locationTrack.canGetLocation()) {
-                    double longitude = locationTrack.getLongitude();
-                    double latitude = locationTrack.getLatitude();
-                    try {
-                        if(longitude==0.0)
-                        {
-                            wait(10);
-                            locfetched=0;
-                        }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if(longitude!=0.0)
-                    {
-                        locfetched=1;
-                    }
-                    loc[0] = String.valueOf(longitude);
-                    loc[1] = String.valueOf(latitude);
-                    Log.e("lon",loc[0]);
-                    Log.e("lat",loc[1]);
-                }
-                else {
-                    locfetched=0;
-                    locationTrack.showSettingsAlert();
-                }
+                getloc();
             }
         });
 
@@ -102,40 +88,149 @@ public class user_1 extends AppCompatActivity {
         book.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                func(user);
+                if(locfetched==1) {
+                    func(user);
+                }
+                else {
+                    new AlertDialog.Builder(user_1.this)
+                            .setMessage("Please fetch your device location")
+                            .setPositiveButton("OK", null)
+                            .create()
+                            .show();
+                    return;
+                }
+                wb= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
+                wb.child("try1").child("user_reqs").child(user).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DataSnapshot> task) {
+                        if (!task.isSuccessful()) {
+                            Log.e("firebase", "Error getting data", task.getException());
+                        }
+                        else {
+                            Log.e("wait","Firebase waiting");
+                            res= task.getResult().getValue(user_req_obj.class);
+                            Log.e("res",res.driver);
+
+                            if("NA".equals(res.driver)){
+
+                                // Create and show the ProgressDialog
+                                progressDialog = new ProgressDialog(user_1.this);
+                                progressDialog.setMessage("Waiting for driver...");
+                                progressDialog.setCancelable(true);
+                                progressDialog.show();
+                                waitForFieldValueUpdate("served",1,progressDialog);
+                            }else {
+                                Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
+
+                            }
+                        }
+                    }
+                });
+
             }
         });
     }
 
+public void endd()
+{
 
+    Intent obj = new Intent(getApplicationContext(),user_maps.class);
+    Log.e("resserved", String.valueOf(res.served));
+    obj.putExtra("res", (Serializable) res);
+    startActivity(obj);
+    finish();
+}
     public void func(String user)
     {
-        if(locfetched==1)
-        {
+        ProgressDialog pd = new ProgressDialog(user_1.this);
+        pd.setTitle("Loading");
+        pd.setMessage("Finding a driver. Please wait!!");
+        pd.setCancelable(false);
+        pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        pd.show();
+
             Log.e("Latitude:" , loc[1]);
             Log.e("Longitude:" , loc[0]);
+            user_req_obj req1=new user_req_obj(user,loc[1],loc[0]);
             wdatabase= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
-            wdatabase.child("try1").child("user_reqs").child(user).child("lon").setValue(loc[0]);
-            wdatabase.child("try1").child("user_reqs").child(user).child("lat").setValue(loc[1]);
-            wdatabase.child("try1").child("user_reqs").child(user).child("user").setValue(user);
-            ProgressDialog pd = new ProgressDialog(user_1.this);
-            pd.setTitle("Loading");
-            pd.setMessage("Finding a driver. Please wait!!");
-            pd.setCancelable(true);
-            pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            pd.show();
-            if(wdatabase.child("try1").child("app_users").child(user).get()!=null)
+            wdatabase.child("try1").child("user_reqs").child(user).setValue(req1);
+
+            if(wdatabase.child("try1").child("user_req").child(user).child("driver").get().toString()!="NAa")
             {
+                Log.e("load","naa");
                 pd.dismiss();
             }
+    }
+
+    public void getloc()
+    {
+        locationTrack = new LocationTrack(user_1.this);
+        if (locationTrack.canGetLocation()) {
+            longitude = locationTrack.getLongitude();
+            latitude = locationTrack.getLatitude();
+            try {
+                if(longitude==0.0)
+                {
+                    Thread.sleep(4000);
+                    locfetched=0;
+                    longitude = locationTrack.getLongitude();
+                    latitude = locationTrack.getLatitude();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if(longitude!=0.0)
+            {
+                locfetched=1;
+            }
+            loc[0] = String.valueOf(longitude);
+            loc[1] = String.valueOf(latitude);
+            Log.e("lon",loc[0]);
+            Log.e("lat",loc[1]);
         }
         else {
-            new AlertDialog.Builder(user_1.this)
-                    .setMessage("Please fetch your device location")
-                    .setPositiveButton("OK", null)
-                    .create()
-                    .show();
+            locfetched=0;
+            locationTrack.showSettingsAlert();
         }
+    }
+    private void waitForFieldValueUpdate(final String field, final int desiredValue,ProgressDialog progressDialog) {
+
+        wdatabase1= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference().child("user_reqs").child(user);
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.e("waitupdate","Inside datachange");
+                user_req_obj check=dataSnapshot.getValue(user_req_obj.class);
+                int value=99;
+                if(check!=null)
+                {
+                    value =check.getServed();
+                }
+                else{
+                    Toast.makeText(user_1.this, "NULLLLL", Toast.LENGTH_SHORT).show();
+                }
+                Log.e("value", String.valueOf(value));
+
+                if (value != 0 && value==desiredValue) {
+                    // Desired value is updated in the database field
+                    progressDialog.dismiss();
+                    Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
+                    wdatabase1.removeEventListener(valueEventListener);
+                    endd();
+                }
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                // Error occurred while reading from the database
+                progressDialog.dismiss();
+                Toast.makeText(user_1.this, "Failed to read database", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        // Add the ValueEventListener to the DatabaseReference
+        wdatabase1.addValueEventListener(valueEventListener);
     }
 
 
@@ -218,5 +313,7 @@ public class user_1 extends AppCompatActivity {
         super.onDestroy();
         locationTrack.stopListener();
     }
+
+
 
 }

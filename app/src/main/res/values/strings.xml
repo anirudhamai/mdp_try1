@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">mdp_try1</string>
+    <string name="title_activity_maps1">MapsActivity1</string>
+    <string name="title_activity_user_maps">user_maps</string>
 </resources>

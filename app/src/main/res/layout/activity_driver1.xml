@@ -8,14 +8,14 @@
 
     <ToggleButton
         android:id="@+id/toggleButton"
-        android:layout_width="202dp"
-        android:layout_height="86dp"
+        android:layout_width="163dp"
+        android:layout_height="236dp"
         android:layout_marginStart="116dp"
         android:layout_marginTop="244dp"
-        android:gravity="center"
         android:background="#FF0000"
         android:fadingEdge="vertical"
         android:fadingEdgeLength="10sp"
+        android:gravity="center"
         android:rotationX="13"
         android:text="ToggleButton"
         android:textOff="Busy"
