@@ -43,9 +43,6 @@
             android:exported="false" />
 
         <activity
-            android:name="com.example.mdp_try1.user_window"
-            android:exported="false" />
-        <activity
             android:name="com.example.mdp_try1.MapsActivity1"
             android:exported="false"
             android:label="@string/title_activity_maps1" />

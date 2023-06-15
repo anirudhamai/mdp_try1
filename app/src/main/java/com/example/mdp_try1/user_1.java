@@ -200,23 +200,25 @@ public void endd()
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.e("waitupdate","Inside datachange");
-                user_req_obj check=dataSnapshot.getValue(user_req_obj.class);
-                int value=99;
-                if(check!=null)
-                {
-                    value =check.getServed();
-                }
-                else{
-                    Toast.makeText(user_1.this, "NULLLLL", Toast.LENGTH_SHORT).show();
-                }
-                Log.e("value", String.valueOf(value));
+                if(dataSnapshot.exists()){
+                    user_req_obj check=dataSnapshot.getValue(user_req_obj.class);
+                    int value=1;
+                    if(check!=null)
+                    {
+                        value =check.getServed();
+                    }
+                    else{
+                        Toast.makeText(user_1.this, "NULLLLL", Toast.LENGTH_SHORT).show();
+                    }
+                    Log.e("value", String.valueOf(value));
 
-                if (value != 0 && value==desiredValue) {
-                    // Desired value is updated in the database field
-                    progressDialog.dismiss();
-                    Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
-                    wdatabase1.removeEventListener(valueEventListener);
-                    endd();
+                    if (value != 0 && value==desiredValue) {
+                        // Desired value is updated in the database field
+                        progressDialog.dismiss();
+                        Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
+                        wdatabase1.removeEventListener(valueEventListener);
+                        endd();
+                    }
                 }
             }
 
@@ -308,6 +310,21 @@ public void endd()
     }
 
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // Add the value event listener to start listening for changes
+        wdatabase1.addValueEventListener(valueEventListener);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        // Remove the value event listener to stop listening for changes
+        wdatabase1.removeEventListener(valueEventListener);
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
