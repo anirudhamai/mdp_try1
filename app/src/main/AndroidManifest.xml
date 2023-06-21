@@ -18,7 +18,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mdp_try1"
         tools:targetApi="31">
-
+        <activity
+            android:name="com.example.mdp_try1.server"
+            android:exported="false" />
+        <activity
+            android:name="com.example.mdp_try1.shaker"
+            android:exported="false" />
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -32,7 +37,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBKPWo066yygiuaZIVlFz13Em5HdNADVk8" />
+            android:value="AIzaSyDma4Izfk0Dd0CN9KXaF7WdC-1LaFDidaY" />
 
         <activity
             android:name="com.example.mdp_try1.user_maps"
@@ -41,7 +46,6 @@
         <activity
             android:name="com.example.mdp_try1.admin"
             android:exported="false" />
-
         <activity
             android:name="com.example.mdp_try1.MapsActivity1"
             android:exported="false"

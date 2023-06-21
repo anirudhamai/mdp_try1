@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class user_req_obj implements Serializable {
     public String user,driver,ulat,ulon,dlat,dlon,eta;
-    public int served=0;
+    public int served;
 
     public user_req_obj()
     {
@@ -15,8 +15,9 @@ public class user_req_obj implements Serializable {
         this.ulat=lat;
         this.ulon=lon;
         this.driver="NA";
-        this.dlat="0.0";
-        this.dlon="0.0";
+        this.dlat="NA";
+        this.dlon="NA";
+        this.served=0;
     }
     public int getServed()
     {

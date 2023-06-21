@@ -1,27 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".driver1">
+    tools:context=".driver1"
+    android:background="@drawable/newbackground"
+    android:orientation="vertical"
+    >
 
-    <ToggleButton
-        android:id="@+id/toggleButton"
-        android:layout_width="163dp"
-        android:layout_height="236dp"
-        android:layout_marginStart="116dp"
-        android:layout_marginTop="244dp"
-        android:background="#FF0000"
-        android:fadingEdge="vertical"
-        android:fadingEdgeLength="10sp"
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:fontFamily="@font/comfortaasemibold"
         android:gravity="center"
-        android:rotationX="13"
-        android:text="ToggleButton"
-        android:textOff="Busy"
-        android:textOn="Available"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_marginTop="120dp"
+        android:text="Use the switch"
+        android:textColor="#FFEB3B"
+        android:textSize="35sp"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:fontFamily="@font/comfortaasemibold"
+        android:gravity="center_horizontal"
+        android:text="Update your Status"
+        android:textColor="#FFEB3B"
+        android:textSize="35sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+        <ToggleButton
+            android:id="@+id/toggleButton"
+            android:layout_width="143dp"
+            android:layout_height="212dp"
+            android:background="#FF0000"
+            android:fadingEdge="vertical"
+            android:fadingEdgeLength="10sp"
+            android:gravity="center"
+            android:rotationX="12"
+            android:text="ToggleButton"
+            android:textOff="Busy"
+            android:textOn="Available"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </LinearLayout>
+
+</LinearLayout>

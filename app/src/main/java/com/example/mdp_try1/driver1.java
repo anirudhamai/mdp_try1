@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
@@ -21,20 +22,24 @@ import android.view.View;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class driver1 extends AppCompatActivity {
     int locfetched=0;
+    int availability=0;
     String user;
-    DatabaseReference wdatabase;
+    DatabaseReference wdatabase,ww,wd;
     private Handler handler;
     private Runnable toggleChecker;
     private ArrayList permissionsToRequest;
@@ -82,7 +87,7 @@ public class driver1 extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        handler.postDelayed(toggleChecker, 30000); // Start the initial check after 10 seconds
+        handler.postDelayed(toggleChecker, 20000); // Start the initial check after 10 seconds
     }
 
     @Override
@@ -94,6 +99,7 @@ public class driver1 extends AppCompatActivity {
 
     public void fun()
     {
+
         Log.e("inside","fun");
 
         handler = new Handler();
@@ -101,17 +107,59 @@ public class driver1 extends AppCompatActivity {
             @Override
             public void run() {
                 Log.e("inside","run");
-                checkToggleButtonState(); // Method to check the ToggleButton state
-                handler.postDelayed(this, 30000); // Schedule the next check after 10 seconds (10,000 milliseconds)
+                boolean x=checkToggleButtonState();
+                // Method to check the ToggleButton state
+                if(x)
+                {
+                    ww=FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
+                    wdatabase.child("try1").child("ready_drivers").child(user).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<DataSnapshot> task) {
+                            readydriver rd=task.getResult().getValue(readydriver.class);
+                            Log.e("rd",rd.uname);
+                            if(rd.set==1)
+                            {
+                                wd=FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
+                                wd.child("try1").child("ready_drivers").child(user).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void unused) {
+                                        Log.e("status", "deleted");
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e("status", "deletion failed");
+                                    }
+                                });
+                                Intent obj = new Intent(getApplicationContext(),MapsActivity1.class);
+                                Log.e("driver book", "yes");
+                                obj.putExtra("res_from_driver", rd.usern);
+                                startActivity(obj);
+                                finish();
+                            }
+                            else {
+                                Toast.makeText(driver1.this, "No user request found!!", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
+
+                handler.postDelayed(this, 20000); // Schedule the next check after 10 seconds (10,000 milliseconds)
             }
         };
     }
 
-    public void checkToggleButtonState()
+    public boolean checkToggleButtonState()
     {
         boolean isChecked = avail.isChecked();
-
-        if (isChecked) {
+        if(availability==1)
+        {
+            if(isChecked)
+            {
+                return true;
+            }
+        }
+        if (isChecked ) {
             Log.e("state","available");
             locationTrack = new LocationTrack(driver1.this);
             if (locationTrack.canGetLocation()) {
@@ -130,6 +178,11 @@ public class driver1 extends AppCompatActivity {
                 {
                     locfetched=1;
                 }
+                if(locfetched==0)
+                {
+                    availability=0;
+                    return false;
+                }
                 loc[0] = String.valueOf(longitude);
                 loc[1] = String.valueOf(latitude);
                 Log.e("lon",loc[0]);
@@ -137,6 +190,7 @@ public class driver1 extends AppCompatActivity {
                 readydriver r1=new readydriver(loc[1],loc[0],user);
                 wdatabase= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
                 wdatabase.child("try1").child("ready_drivers").child(user).setValue(r1);
+
 //                wdatabase.child("try1").child("ready_drivers").child(user).child("lat").setValue(loc[1]);
 //                wdatabase.child("try1").child("ready_drivers").child(user).child("user").setValue(user);
             }
@@ -145,7 +199,14 @@ public class driver1 extends AppCompatActivity {
 //                locationTrack.showSettingsAlert();
 
             }
+            availability=1;
+            return true;
         } else {
+            if(availability==0)
+            {
+                return false;
+            }
+            availability=0;
             Log.e("state", "busy");
             wdatabase = FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
             if (locfetched == 0) {
@@ -165,6 +226,7 @@ public class driver1 extends AppCompatActivity {
                 });
                 Toast.makeText(this, "Table Updated", Toast.LENGTH_SHORT);
             }
+            return false;
         }
     }
 

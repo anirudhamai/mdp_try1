@@ -1,12 +1,20 @@
 package com.example.mdp_try1;
 
 public class readydriver {
-    private String lat,lon,uname;
-
+    public String lat,lon,uname,usern="NA";
+    public int set;
     public readydriver(String s, String s1, String user) {
         this.lat=s;
         this.lon=s1;
         this.uname=user;
+        this.set=0;
+    }
+    public readydriver() {
+        this.lat="0.0";
+        this.lon="0.0";
+        this.uname="NA";
+        this.usern="NA";
+        set=0;
     }
 
 

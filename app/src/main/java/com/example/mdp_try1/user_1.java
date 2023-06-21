@@ -18,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -32,6 +33,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import android.location.Location;
@@ -43,7 +45,7 @@ public class user_1 extends AppCompatActivity {
 
     Button getloc, book;
     String user;
-    int locfetched = 0;
+    int locfetched = 0, loopend=0;
     double longitude,latitude;
     user_req_obj res,check;
     DatabaseReference wdatabase,wdatabase1,wb;
@@ -55,7 +57,8 @@ public class user_1 extends AppCompatActivity {
     LocationTrack locationTrack;
     final String[] loc = new String[2];
     private ProgressDialog progressDialog;
-    private ValueEventListener valueEventListener;
+    private Handler handler;
+    private Runnable toggleChecker;
 
 
 
@@ -99,6 +102,11 @@ public class user_1 extends AppCompatActivity {
                             .show();
                     return;
                 }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 wb= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
                 wb.child("try1").child("user_reqs").child(user).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
                     @Override
@@ -112,7 +120,7 @@ public class user_1 extends AppCompatActivity {
                             Log.e("res",res.driver);
 
                             if("NA".equals(res.driver)){
-
+                                Log.e("WATCH","inside fetching");
                                 // Create and show the ProgressDialog
                                 progressDialog = new ProgressDialog(user_1.this);
                                 progressDialog.setMessage("Waiting for driver...");
@@ -136,7 +144,7 @@ public void endd()
 
     Intent obj = new Intent(getApplicationContext(),user_maps.class);
     Log.e("resserved", String.valueOf(res.served));
-    obj.putExtra("res", (Serializable) res);
+    obj.putExtra("res", res.user);
     startActivity(obj);
     finish();
 }
@@ -194,45 +202,48 @@ public void endd()
         }
     }
     private void waitForFieldValueUpdate(final String field, final int desiredValue,ProgressDialog progressDialog) {
-
-        wdatabase1= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference().child("user_reqs").child(user);
-        valueEventListener = new ValueEventListener() {
+        handler = new Handler();
+        toggleChecker = new Runnable() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.e("waitupdate","Inside datachange");
-                if(dataSnapshot.exists()){
-                    user_req_obj check=dataSnapshot.getValue(user_req_obj.class);
-                    int value=1;
-                    if(check!=null)
-                    {
-                        value =check.getServed();
-                    }
-                    else{
-                        Toast.makeText(user_1.this, "NULLLLL", Toast.LENGTH_SHORT).show();
-                    }
-                    Log.e("value", String.valueOf(value));
+            public void run() {
+                Log.e("waitupdate","Inside waitfor change loop");
+                wdatabase1= FirebaseDatabase.getInstance("https://hosp-db-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference();
 
-                    if (value != 0 && value==desiredValue) {
-                        // Desired value is updated in the database field
-                        progressDialog.dismiss();
-                        Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
-                        wdatabase1.removeEventListener(valueEventListener);
-                        endd();
+                wdatabase1.child("user_reqs").child(user).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DataSnapshot> task) {
+                        if(task.getResult()==null)
+                        {
+                            return;
+                        }
+                        Log.e("waitupdate","Inside datachange");
+                        user_req_obj check=task.getResult().getValue(user_req_obj.class);
+                        int value=0;
+                        if(check!=null)
+                        {
+                            value =check.getServed();
+                        }
+                        else{
+                            Toast.makeText(user_1.this, "NULLLLL", Toast.LENGTH_SHORT).show();
+                        }
+                        Log.e("value", String.valueOf(value));
+
+                        if (value != 0 && value==desiredValue) {
+                            // Desired value is updated in the database field
+                            progressDialog.dismiss();
+                            loopend=1;
+                            Toast.makeText(user_1.this, "Ambulance is on the way!!", Toast.LENGTH_SHORT).show();
+                            endd();
+                        }
+                        else {
+                            loopend=0;
+                        }
                     }
-                }
-            }
-
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                // Error occurred while reading from the database
-                progressDialog.dismiss();
-                Toast.makeText(user_1.this, "Failed to read database", Toast.LENGTH_SHORT).show();
+                });
+                handler.postDelayed(this, 20000);
             }
         };
-
-        // Add the ValueEventListener to the DatabaseReference
-        wdatabase1.addValueEventListener(valueEventListener);
+        Log.e("out","loop");
     }
 
 
@@ -311,11 +322,24 @@ public void endd()
 
 
     @Override
+    protected void onResume() {
+        super.onResume();
+//        handler.postDelayed(toggleChecker, 10000); // Start the initial check after 10 seconds
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(toggleChecker); // Stop the continuous checking
+    }
+
+
+    @Override
     protected void onStart() {
         super.onStart();
 
         // Add the value event listener to start listening for changes
-        wdatabase1.addValueEventListener(valueEventListener);
+//        wdatabase1.addValueEventListener(valueEventListener);
     }
 
     @Override
@@ -323,14 +347,12 @@ public void endd()
         super.onStop();
 
         // Remove the value event listener to stop listening for changes
-        wdatabase1.removeEventListener(valueEventListener);
+//        wdatabase1.removeEventListener(valueEventListener);
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
         locationTrack.stopListener();
     }
-
-
 
 }
